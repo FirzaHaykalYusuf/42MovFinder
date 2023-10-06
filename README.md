@@ -5,7 +5,7 @@
 
 Bingung ingin menonton film apa? Biarkan 42MovFinder membantu Anda! Dengan akses ke database film populer dari seluruh dunia, aplikasi ini memberikan rekomendasi film terbaik yang sesuai dengan selera Anda.
 
-Fitur Utama:
+Fitur Utama: 
 
 Rekomendasi Film: Dapatkan daftar film populer yang diperbarui setiap hari.
 Filter & Pencarian: Cari film berdasarkan judul, aktor, sutradara, atau genre favorit Anda.
