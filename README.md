@@ -13,4 +13,4 @@ Detail & Ulasan: Baca sinopsis, lihat trailer, dan baca ulasan dari penonton lai
 Penyesuaian Selera: Beri rating pada film yang sudah Anda tonton dan dapatkan rekomendasi yang semakin akurat sesuai dengan selera Anda.
 Inspirasi dari angka 42, jawaban atas segalanya, 42MovFinder bertujuan untuk menjadi jawaban atas pertanyaan "film apa yang harus saya tonton malam ini?". Dengan tampilan antarmuka yang ramah pengguna dan fitur-fitur canggih, menemukan film untuk ditonton kini lebih mudah dan menyenangkan!
 
-Unduh 42MovFinder sekarang dan mulailah petualangan sinematik Anda!
+Unduh 42MovFinder sekarang dan mulailah petualangan sinematik Anda! 
