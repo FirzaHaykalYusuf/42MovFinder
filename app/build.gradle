@@ -53,4 +53,10 @@ dependencies {
 
     //UI Size
     implementation 'com.intuit.sdp:sdp-android:1.0.6'
+
+    //Local Broadcast Manager
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+
+    //Converter GSON
+    implementation 'com.google.code.gson:gson:2.8.8'
 }
