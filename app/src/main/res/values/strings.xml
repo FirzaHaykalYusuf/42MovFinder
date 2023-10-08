@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">42MovFinder</string>
+    <string name="select_rating">Select a rating</string>
+    <string-array name="rating_array">
+        <item>All Ratings</item>
+        <item>1 Star and above</item>
+        <item>2 Stars and above</item>
+        <item>3 Stars and above</item>
+        <item>4 Stars and above</item>
+        <item>5 Stars</item>
+    </string-array>
+
 </resources>

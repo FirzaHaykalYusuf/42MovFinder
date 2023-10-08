@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="Black">#FF000000</color>
+    <color name="White">#FFFFFFFF</color>
+    <color name="Transparent">@android:color/transparent</color>
+    <color name="WhiteSecondary">#F7F7F7</color>
+    <color name="WhiteThrid">#D0D0D0</color>
+    <color name="WhiteFourth">#F5F7FA</color>
+    <color name="Outline">#ACB5BD</color>
+    <color name="OutlineSecond">#E8E8E8</color>
+    <color name="TextAdult">#723A36</color>
 </resources>

@@ -6,4 +6,11 @@
     </style>
 
     <style name="Theme.42MovFinder" parent="Base.Theme.42MovFinder" />
+
+    <!-- styles.xml -->
+    <style name="SpinnerTextStyle">
+        <item name="android:textColor">@color/Black</item>
+        <!-- Anda juga dapat menambahkan atribut lain jika diperlukan -->
+    </style>
+
 </resources>
