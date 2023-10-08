@@ -1,19 +1,13 @@
 package com.firza.i42movfinder.features.menu;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.room.Room;
-import androidx.viewpager2.widget.ViewPager2;
-
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,6 +18,15 @@ import android.util.Log;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
+import androidx.viewpager2.widget.ViewPager2;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
 import com.firza.i42movfinder.R;
 import com.firza.i42movfinder.adapter.BannerAdapter;
 import com.firza.i42movfinder.adapter.MovieListAdapter;
@@ -32,15 +35,18 @@ import com.firza.i42movfinder.database.MovieDao;
 import com.firza.i42movfinder.database.MovieEntity;
 import com.firza.i42movfinder.helpers.DataHelper;
 import com.firza.i42movfinder.helpers.UpdateService;
+import com.firza.i42movfinder.helpers.UpdateWorker;
 import com.firza.i42movfinder.model.api.Api;
 import com.firza.i42movfinder.model.api.RetrofitInstance;
 import com.firza.i42movfinder.model.response.MovieResponse;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -75,6 +81,12 @@ public class MainActivity extends AppCompatActivity {
 
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "movies-db").build();
         createNotificationChannel();
+
+        PeriodicWorkRequest updateRequest = new PeriodicWorkRequest.Builder(UpdateWorker.class, 15, TimeUnit.MINUTES)
+                .setInitialDelay(1, TimeUnit.MINUTES)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(updateRequest);
 
         fetchMovies();
         setup();
@@ -116,14 +128,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private BroadcastReceiver updateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // Lakukan apa yang Anda inginkan setelah menerima broadcast bahwa pembaruan telah selesai
-            Toast.makeText(context, "Data telah diperbarui!", Toast.LENGTH_SHORT).show();
-        }
-    };
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -131,6 +135,15 @@ public class MainActivity extends AppCompatActivity {
         fetchMovies();
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver,
                 new IntentFilter(UpdateService.ACTION_UPDATE_COMPLETED));
+
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkReceiver, filter);
+
+        PeriodicWorkRequest updateRequest = new PeriodicWorkRequest.Builder(UpdateWorker.class, 15, TimeUnit.MINUTES)
+                .setInitialDelay(1, TimeUnit.MINUTES)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(updateRequest);
     }
 
     @Override
@@ -138,7 +151,29 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         stopAutoSlide();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(updateReceiver);
+        unregisterReceiver(networkReceiver);
     }
+
+    private BroadcastReceiver updateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (isConnectedToInternet()) {
+                Snackbar.make(findViewById(R.id.root_layout), "Data success to update!", Snackbar.LENGTH_LONG).show();
+            } else {
+                Snackbar.make(findViewById(R.id.root_layout), "Data failed update!", Snackbar.LENGTH_LONG).show();
+            }
+        }
+    };
+
+    private BroadcastReceiver networkReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (isConnectedToInternet()) {
+                fetchMovies();
+                Snackbar.make(findViewById(R.id.root_layout), "Data success to update!", Snackbar.LENGTH_LONG).show();
+            }
+        }
+    };
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -154,36 +189,40 @@ public class MainActivity extends AppCompatActivity {
 
     public void fetchMovies() {
         movieList.clear();
-        Api apiService = RetrofitInstance.getApi();
-        Call<MovieResponse> call = apiService.discoverMovie();
+        if (isConnectedToInternet()) {
+            Api apiService = RetrofitInstance.getApi();
+            Call<MovieResponse> call = apiService.discoverMovie();
 
-        call.enqueue(new Callback<MovieResponse>() {
-            @Override
-            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    MovieResponse movieResponse = response.body();
-                    dataHelper.saveMovieList(movieResponse.getResults());
-                    String jsonDHMovies = gson.toJson(dataHelper.getMovieList());
-                    Log.e("RespMovieList", " " + jsonDHMovies);
-                    movieList.addAll(movieResponse.getResults());
+            call.enqueue(new Callback<MovieResponse>() {
+                @Override
+                public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        MovieResponse movieResponse = response.body();
+                        dataHelper.saveMovieList(movieResponse.getResults());
+                        String jsonDHMovies = gson.toJson(dataHelper.getMovieList());
+                        Log.e("RespMovieList", " " + jsonDHMovies);
+                        movieList.addAll(movieResponse.getResults());
 
-                    // Update the adapter
-                    movieListAdapter.updateData(movieResponse.getResults());
+                        // Update the adapter
+                        movieListAdapter.updateData(movieResponse.getResults());
 
-                    List<MovieEntity> movieEntities = convertToMovieEntities(response.body().getResults());
-                    AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "movies-db").build();
-                    new InsertMoviesTask(db.movieDao()).execute(movieEntities);
+                        List<MovieEntity> movieEntities = convertToMovieEntities(response.body().getResults());
+                        AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "movies-db").build();
+                        new InsertMoviesTask(db.movieDao()).execute(movieEntities);
 
-                } else {
-                    Toast.makeText(MainActivity.this, "Connection lost, please check your Internet!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Connection lost, please check your Internet!", Toast.LENGTH_SHORT).show();
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<MovieResponse> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Connection lost, please check your Internet!", Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onFailure(Call<MovieResponse> call, Throwable t) {
+//                    Toast.makeText(MainActivity.this, "Connection lost, please check your Internet!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            Toast.makeText(MainActivity.this, "Connection lost, please check your Internet!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private List<MovieEntity> convertToMovieEntities(List<MovieResponse.Result> movieResults) {
@@ -220,6 +259,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public boolean isConnectedToInternet() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
 
     private void searchMovies(String query) {
         if (query.isEmpty()) {

@@ -12,10 +12,14 @@ import com.firza.i42movfinder.database.AppDatabase;
 import com.firza.i42movfinder.database.MovieEntity;
 import com.squareup.picasso.Picasso;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 public class DetailMovieActivity extends AppCompatActivity {
     private AppDatabase db;
     ImageView ivMovie;
-    TextView tvMovieTitle, tvMovieRating, tvMovieVoteCount, popularityView, tvMovieOverview;
+    TextView tvMovieTitle, tvMovieRating, tvMovieVoteCount, tvMoviePopularity, tvMovieOverview;
     RatingBar ratingBar;
 
     @Override
@@ -28,7 +32,7 @@ public class DetailMovieActivity extends AppCompatActivity {
         tvMovieTitle = findViewById(R.id.tvMovieTitle);
         tvMovieRating = findViewById(R.id.tvMovieRating);
         tvMovieVoteCount = findViewById(R.id.tvMovieVoteCount);
-//        popularityView = findViewById(R.id.popularityView);
+        tvMoviePopularity = findViewById(R.id.tvMoviePopularity);
         tvMovieOverview = findViewById(R.id.tvMovieOverview);
         ratingBar = findViewById(R.id.ratingBar);
 
@@ -58,9 +62,20 @@ public class DetailMovieActivity extends AppCompatActivity {
                 tvMovieTitle.setText(movie.getTitle());
                 tvMovieRating.setText(String.valueOf(movie.getVoteAverage()));
                 tvMovieVoteCount.setText(String.valueOf(movie.getVoteCount()));
-//                popularityView.setText(String.valueOf(movie.getPopularity()));
                 tvMovieOverview.setText(movie.getOverview());
                 ratingBar.setRating((float) (movie.getVoteAverage() / 2));
+
+                double popularity = movie.getPopularity();
+
+                DecimalFormatSymbols formatSymbols = new DecimalFormatSymbols(Locale.getDefault());
+                formatSymbols.setGroupingSeparator('.');
+                formatSymbols.setDecimalSeparator(',');
+
+                DecimalFormat formatter = new DecimalFormat("#,###.###", formatSymbols);
+                String formattedPopularity = formatter.format(popularity);
+
+                tvMoviePopularity.setText(formattedPopularity);
+
             }
         }
     }
